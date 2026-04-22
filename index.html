@@ -894,6 +894,17 @@ function doLogin() {
 /* ══════════════════════════════════════════════════════
    DATA
 ══════════════════════════════════════════════════════ */
+function mergeLayout(l) {
+    // Always include all known keys/ids; preserve stored order, append any new ones at end
+    const allCols    = COLS.map(c => c.key);
+    const allFilters = FILTER_DEFS.map(f => f.id);
+    const cols    = [...(l.columns || []).filter(k => allCols.includes(k)),
+                     ...allCols.filter(k => !(l.columns || []).includes(k))];
+    const filters = [...(l.filters || []).filter(id => allFilters.includes(id)),
+                     ...allFilters.filter(id => !(l.filters || []).includes(id))];
+    return { columns: cols, filters };
+}
+
 async function loadSaved() {
     const [winesOk, layoutOk] = await Promise.all([loadFromGitHub(), loadLayoutFromGitHub()]);
     if (!winesOk) {
@@ -902,7 +913,7 @@ async function loadSaved() {
     }
     if (!layoutOk) {
         const rawL = localStorage.getItem('cc_layout_v1');
-        if (rawL) { try { const l = JSON.parse(rawL); colOrder = l.columns; filterOrder = l.filters; } catch(e) {} }
+        if (rawL) { try { const l = JSON.parse(rawL); const m = mergeLayout(l); colOrder = m.columns; filterOrder = m.filters; } catch(e) {} }
     }
     if (!colOrder)    colOrder    = COLS.map(c => c.key);
     if (!filterOrder) filterOrder = FILTER_DEFS.map(f => f.id);
@@ -925,9 +936,9 @@ async function loadLayoutFromGitHub() {
     try {
         const res = await fetch(LAYOUT_RAW_URL + '?t=' + Date.now());
         if (res.ok) {
-            const l = await res.json();
-            colOrder    = Array.isArray(l.columns)    ? l.columns    : COLS.map(c => c.key);
-            filterOrder = Array.isArray(l.filters)    ? l.filters    : FILTER_DEFS.map(f => f.id);
+            const m = mergeLayout(await res.json());
+            colOrder    = m.columns;
+            filterOrder = m.filters;
             localStorage.setItem('cc_layout_v1', JSON.stringify({ columns: colOrder, filters: filterOrder }));
             return true;
         }
