@@ -751,6 +751,32 @@
         </div>
     </div>
 
+    <footer style="
+        background: var(--green);
+        border-top: 2px solid var(--black);
+        padding: 20px 50px;
+        display: flex; gap: 32px; align-items: center; justify-content: center;
+        flex-wrap: wrap;
+    ">
+        <a href="https://cellarcollective.de/impressum" target="_blank" rel="noopener"
+           class="wobble"
+           style="font-family:var(--font);font-stretch:expanded;font-size:10px;font-weight:700;
+                  letter-spacing:2px;text-transform:uppercase;color:var(--black);text-decoration:none;">
+            Impressum
+        </a>
+        <a href="https://cellarcollective.de/datenschutz" target="_blank" rel="noopener"
+           class="wobble"
+           style="font-family:var(--font);font-stretch:expanded;font-size:10px;font-weight:700;
+                  letter-spacing:2px;text-transform:uppercase;color:var(--black);text-decoration:none;">
+            Datenschutz
+        </a>
+        <a href="https://cellarcollective.de/agb" target="_blank" rel="noopener"
+           class="wobble"
+           style="font-family:var(--font);font-stretch:expanded;font-size:10px;font-weight:700;
+                  letter-spacing:2px;text-transform:uppercase;color:var(--black);text-decoration:none;">
+            AGB
+        </a>
+    </footer>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1048,6 +1074,16 @@ function applyFilters() {
             const nb = parseFloat(String(vb).replace(',', '.'));
             if (!isNaN(na) && !isNaN(nb)) return (na - nb) * sortDir;
             return String(va).localeCompare(String(vb), 'de') * sortDir;
+        });
+    } else {
+        filtered.sort((a, b) => {
+            for (const col of ['Land', 'Region', 'Weingut', 'Wein']) {
+                const cmp = String(a[col] || '').localeCompare(String(b[col] || ''), 'de');
+                if (cmp !== 0) return cmp;
+            }
+            const ja = parseInt(a.Jahrgang), jb = parseInt(b.Jahrgang);
+            if (!isNaN(ja) && !isNaN(jb)) return ja - jb;
+            return String(a.Jahrgang || '').localeCompare(String(b.Jahrgang || ''), 'de');
         });
     }
 
