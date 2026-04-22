@@ -257,7 +257,7 @@
         /* ── TABLE ───────────────────────────────────── */
         .table-wrapper {
             overflow: auto;
-            max-height: calc(100vh - 175px);
+            max-height: calc(100vh - 225px);
             background: var(--white);
         }
 
@@ -584,7 +584,7 @@
 
         /* ── TOAST ───────────────────────────────────── */
         .toast {
-            position: fixed; bottom: 32px; right: 50px;
+            position: fixed; bottom: 84px; right: 50px;
             background: var(--black); color: var(--green);
             padding: 10px 18px;
             font-family: var(--font); font-stretch: expanded;
@@ -752,9 +752,10 @@
     </div>
 
     <footer style="
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
         background: var(--green);
         border-top: 2px solid var(--black);
-        padding: 20px 50px;
+        padding: 14px 50px;
         display: flex; gap: 32px; align-items: center; justify-content: center;
         flex-wrap: wrap;
     ">
