@@ -642,12 +642,80 @@
 
         /* ── RESPONSIVE ──────────────────────────────── */
         @media (max-width: 768px) {
-            header { padding: 12px 16px; }
-            .view-container { padding: 24px 16px; }
-            .controls-bar { flex-direction: column; align-items: stretch; }
-            .upload-label { margin-left: 0; }
-            .toast { right: 16px; bottom: 16px; }
-            body { padding: 0; }
+            /* Header */
+            header {
+                padding: 10px 12px;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .header-logo-img { height: 34px; }
+            .nav-btn {
+                font-size: 10px;
+                padding: 5px 8px;
+                letter-spacing: 0.5px;
+            }
+            .admin-badge { display: none !important; }
+
+            /* Container */
+            .view-container { padding: 12px 10px 12px; }
+
+            /* Controls / Filter bar */
+            .controls-bar {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: flex-end;
+            }
+            .search-input { flex: 1 1 100%; }
+            .filter-wrap  { flex: 1 1 calc(50% - 4px); min-width: 0; }
+            .filter-select { width: 100%; font-size: 11px; }
+            .results-count { flex: 1 1 100%; text-align: center; }
+            .upload-label { margin-left: 0; flex: 1 1 100%; text-align: center; }
+
+            /* Table – horizontal scroll on mobile is acceptable for dense data */
+            .table-wrapper {
+                overflow-x: auto;
+                max-height: calc(100vh - 190px);
+                /* Scroll hint shadow */
+                background:
+                    linear-gradient(to right, white 30%, rgba(255,255,255,0)),
+                    linear-gradient(to left,  white 30%, rgba(255,255,255,0)) 100% 0,
+                    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.12), transparent),
+                    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.12), transparent) 100% 0;
+                background-repeat: no-repeat;
+                background-size: 48px 100%, 48px 100%, 16px 100%, 16px 100%;
+                background-attachment: local, local, scroll, scroll;
+                background-color: white;
+            }
+            table     { font-size: 11px; }
+            thead th  { padding: 7px 6px; font-size: 9px; letter-spacing: 0.5px; }
+            tbody td  { padding: 6px 6px; }
+
+            /* Compact qty controls */
+            .qty-wrap  { gap: 2px; }
+            .qty-btn   { width: 18px; height: 18px; font-size: 12px; }
+            .qty-input { width: 26px; font-size: 11px; }
+            .atc-btn   { font-size: 9px; padding: 2px 5px; letter-spacing: 0; }
+
+            /* Footer */
+            footer { padding: 10px 16px !important; gap: 16px !important; }
+            footer a { font-size: 9px !important; letter-spacing: 1px !important; }
+
+            /* Toast */
+            .toast { right: 12px; bottom: 70px; }
+
+            /* Order form */
+            .form-card { padding: 20px; }
+            .order-summary { top: 10px; padding: 16px; }
+
+            /* Cart */
+            .cart-total-bar { padding: 12px; gap: 12px; }
+            .cart-total-value { font-size: 18px; }
+        }
+
+        @media (max-width: 420px) {
+            .filter-wrap { flex: 1 1 100%; }
+            .nav-btn { font-size: 9px; padding: 4px 6px; }
         }
     </style>
 </head>
