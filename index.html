@@ -318,17 +318,18 @@
         tbody tr:hover { background: #edf2e0; }
         tbody td { padding: 9px 12px; vertical-align: middle; }
 
-        .col-art      { min-width: 65px; }
-        .col-land     { min-width: 75px; }
-        .col-region   { min-width: 110px; }
-        .col-groesse  { min-width: 65px; text-align: center; }
-        .col-jahrgang { min-width: 65px; text-align: center; font-variant-numeric: tabular-nums; }
-        .col-weingut  { min-width: 140px; font-weight: 700; }
-        .col-wein     { min-width: 170px; }
-        .col-preis    { min-width: 90px; text-align: right; font-variant-numeric: tabular-nums; }
-        .col-parker   { min-width: 65px; text-align: center; }
-        .col-avail    { min-width: 75px; text-align: center; }
-        .col-menge    { min-width: 150px; }
+        /* Columns shrink-to-fit; only text columns wrap */
+        .col-art      { white-space: nowrap; }
+        .col-land     { white-space: nowrap; }
+        .col-region   { }
+        .col-groesse  { white-space: nowrap; text-align: center; width: 1%; }
+        .col-jahrgang { white-space: nowrap; text-align: center; width: 1%; font-variant-numeric: tabular-nums; }
+        .col-weingut  { font-weight: 700; }
+        .col-wein     { }
+        .col-preis    { white-space: nowrap; text-align: right; width: 1%; font-variant-numeric: tabular-nums; }
+        .col-parker   { white-space: nowrap; text-align: center; width: 1%; }
+        .col-avail    { white-space: nowrap; text-align: center; width: 1%; }
+        .col-menge    { white-space: nowrap; width: 1%; }
 
         .badge {
             display: inline-block; padding: 2px 8px;
@@ -1680,7 +1681,7 @@ function showView(name) {
 ══════════════════════════════════════════════════════ */
 function fmtPrice(n) {
     if (isNaN(n)) return '–';
-    return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '\u00A0€';
 }
 function parsePrice(raw) { return parseFloat(String(raw || '0').replace(',', '.')) || 0; }
 function esc(s) {
