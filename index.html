@@ -2,221 +2,291 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cellar Collective – Raritätenliste</title>
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0, initial-scale=1.0">
+    <title>The Cellar Collective – Raritätenliste</title>
+    <link rel="icon" href="https://cellarcollective.de/resources/favicon.ico" type="image/x-icon">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,400;125,700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; border: 0; }
 
         :root {
-            --bg: #f7f4ef;
-            --surface: #ffffff;
-            --surface2: #f0ece5;
-            --border: #e0d9d0;
-            --text: #1a1a1a;
-            --text-muted: #7a7570;
-            --accent: #6e1e1e;
-            --accent-hover: #8a2828;
-            --accent-light: #f7ecec;
-            --header-bg: #150808;
-            --header-gold: #d4b896;
+            --green:      #5C6F35;
+            --green-dark: #4a5a28;
+            --black:      #000000;
+            --white:      #ffffff;
+            --gray:       #f0ede6;
+            --gray2:      #e8e4dc;
+            --font:       'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: var(--font);
+            font-stretch: expanded;
+            background: var(--green);
+            color: var(--black);
             min-height: 100vh;
             font-size: 13px;
-            line-height: 1.5;
+            line-height: 1.4;
         }
 
-        /* ── LOGIN ─────────────────────────────────── */
+        /* ── WOBBLE (from cellarcollective.de) ───────── */
+        @keyframes wobble {
+            16.65% { transform: translateX(8px); }
+            33.3%  { transform: translateX(-6px); }
+            49.95% { transform: translateX(4px); }
+            66.6%  { transform: translateX(-2px); }
+            83.25% { transform: translateX(1px); }
+            100%   { transform: translateX(0); }
+        }
+        .wobble {
+            display: inline-block;
+            transform: perspective(1px) translateZ(0);
+        }
+        .wobble:hover, .wobble:focus {
+            animation: wobble 1s ease-in-out 1;
+        }
+
+        /* ── LOGIN ───────────────────────────────────── */
         #login-screen {
             position: fixed; inset: 0;
-            background: var(--header-bg);
+            background: var(--green);
             display: flex; align-items: center; justify-content: center;
             z-index: 1000;
+            padding: 40px;
         }
 
         .login-box {
-            background: #fff;
-            padding: 52px 48px 44px;
-            border-radius: 2px;
-            width: 100%; max-width: 360px;
+            width: 100%; max-width: 380px;
             text-align: center;
         }
 
-        .login-eyebrow {
-            font-size: 10px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 10px;
-        }
-
-        .login-title {
-            font-family: Georgia, 'Times New Roman', serif;
-            font-size: 26px;
-            font-weight: normal;
-            color: var(--accent);
-            margin-bottom: 36px;
+        .login-logo {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            margin-bottom: 60px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .login-box input[type="password"] {
             width: 100%;
-            padding: 11px 16px;
-            border: 1px solid var(--border);
-            border-radius: 2px;
+            padding: 10px 0;
+            background: transparent;
+            border-bottom: 2px solid var(--black);
+            font-family: var(--font);
+            font-stretch: expanded;
             font-size: 14px;
-            margin-bottom: 14px;
-            outline: none;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
             text-align: center;
-            letter-spacing: 4px;
-            transition: border-color 0.2s;
+            color: var(--black);
+            outline: none;
+            margin-bottom: 32px;
         }
-
-        .login-box input[type="password"]::placeholder { letter-spacing: 0.5px; }
-        .login-box input[type="password"]:focus { border-color: var(--accent); }
+        .login-box input[type="password"]::placeholder {
+            color: rgba(0,0,0,0.45);
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
 
         .btn-primary {
-            background: var(--accent); color: #fff; border: none;
-            padding: 11px 28px; font-size: 11px;
-            letter-spacing: 1.5px; text-transform: uppercase;
-            cursor: pointer; border-radius: 2px; width: 100%;
+            background: var(--black);
+            color: var(--white);
+            font-family: var(--font);
+            font-stretch: expanded;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 12px 36px;
+            cursor: pointer;
+            display: inline-block;
             transition: background 0.2s;
         }
-        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-primary:hover { background: var(--green-dark); }
 
         #login-error {
-            color: #b92929; font-size: 12px;
-            margin-top: 12px; min-height: 18px;
-        }
-
-        /* ── HEADER ─────────────────────────────────── */
-        header {
-            background: var(--header-bg); color: #fff;
-            padding: 0 28px;
-            display: flex; align-items: center; justify-content: space-between;
-            height: 58px;
-            position: sticky; top: 0; z-index: 100;
-        }
-
-        .header-logo {
-            font-family: Georgia, serif;
-            font-size: 17px; font-weight: normal;
-            color: var(--header-gold); letter-spacing: 0.5px;
-        }
-
-        .header-logo small {
-            display: block;
-            font-size: 9px; letter-spacing: 3px;
+            color: var(--black);
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
-            color: #6b5040; margin-top: 1px;
-            font-family: -apple-system, sans-serif;
+            letter-spacing: 1px;
+            margin-top: 16px;
+            min-height: 18px;
         }
 
-        nav { display: flex; gap: 2px; align-items: center; }
+        /* ── HEADER ──────────────────────────────────── */
+        header {
+            background: var(--green);
+            padding: 16px 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 2px solid var(--black);
+        }
+
+        .header-logo-img {
+            height: 48px;
+            width: auto;
+            display: block;
+        }
+
+        nav { display: flex; gap: 0; align-items: center; }
 
         .nav-btn {
-            background: transparent; color: #a09080;
-            border: 1px solid transparent;
-            padding: 7px 15px; font-size: 11px;
-            letter-spacing: 1px; text-transform: uppercase;
-            cursor: pointer; border-radius: 2px;
-            transition: all 0.2s; white-space: nowrap;
+            background: transparent;
+            color: var(--black);
+            font-family: var(--font);
+            font-stretch: expanded;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: opacity 0.15s;
         }
-        .nav-btn:hover { color: #e0d0c0; border-color: #3a2010; }
-        .nav-btn.active { color: #fff; border-color: #6b3a20; }
+        .nav-btn:hover { opacity: 0.6; }
+        .nav-btn.active { text-decoration: underline; text-underline-offset: 3px; }
 
         .cart-badge {
-            background: var(--accent); color: #fff;
+            background: var(--black);
+            color: var(--green);
             border-radius: 50%;
-            width: 17px; height: 17px;
+            width: 16px; height: 16px;
             font-size: 9px; font-weight: 700;
             display: inline-flex; align-items: center; justify-content: center;
-            margin-left: 5px;
+            margin-left: 4px;
         }
         .cart-badge.hidden { display: none; }
 
-        /* ── VIEWS ─────────────────────────────────── */
+        /* ── ADMIN ───────────────────────────────────── */
+        .admin-only { display: none !important; }
+        body.admin-mode .admin-only { display: inline-flex !important; }
+        body.admin-mode label.admin-only { display: inline-block !important; }
+
+        .admin-badge {
+            font-size: 9px; letter-spacing: 1.5px;
+            text-transform: uppercase; font-weight: 700;
+            background: var(--black); color: var(--green);
+            padding: 2px 7px; margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        /* ── VIEWS ───────────────────────────────────── */
         .view { display: none; }
         .view.active { display: block; }
 
         .view-container {
             max-width: 1440px; margin: 0 auto;
-            padding: 24px 28px;
+            padding: 40px 50px;
         }
 
-        /* ── SHOP ──────────────────────────────────── */
+        /* ── SHOP CONTROLS ───────────────────────────── */
         .controls-bar {
-            display: flex; gap: 10px;
-            margin-bottom: 18px; flex-wrap: wrap;
-            align-items: center;
+            display: flex; gap: 12px;
+            margin-bottom: 20px; flex-wrap: wrap;
+            align-items: flex-end;
         }
 
         .search-input {
             flex: 1; min-width: 200px;
-            padding: 7px 13px;
-            border: 1px solid var(--border); border-radius: 2px;
-            font-size: 13px; background: #fff; outline: none;
-            transition: border-color 0.2s;
+            padding: 6px 0;
+            background: transparent;
+            border-bottom: 2px solid var(--black);
+            font-family: var(--font);
+            font-stretch: expanded;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--black);
+            outline: none;
         }
-        .search-input:focus { border-color: var(--accent); }
+        .search-input::placeholder { color: rgba(0,0,0,0.45); font-weight: 400; }
 
         .filter-select {
-            padding: 7px 13px;
-            border: 1px solid var(--border); border-radius: 2px;
-            font-size: 13px; background: #fff; cursor: pointer;
-            outline: none; color: var(--text);
+            padding: 6px 0;
+            background: transparent;
+            border-bottom: 2px solid var(--black);
+            font-family: var(--font);
+            font-stretch: expanded;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            color: var(--black);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            min-width: 120px;
         }
-        .filter-select:focus { border-color: var(--accent); }
 
         .upload-label {
-            background: #fff; color: var(--text-muted);
-            border: 1px solid var(--border);
-            padding: 7px 14px; font-size: 11px;
-            letter-spacing: 0.5px; text-transform: uppercase;
-            cursor: pointer; border-radius: 2px;
-            transition: all 0.2s; white-space: nowrap;
+            background: var(--black);
+            color: var(--green);
+            font-family: var(--font);
+            font-stretch: expanded;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            cursor: pointer;
             margin-left: auto;
+            transition: opacity 0.15s;
+            white-space: nowrap;
         }
-        .upload-label:hover { border-color: var(--accent); color: var(--accent); }
+        .upload-label:hover { opacity: 0.75; }
 
         .results-count {
-            font-size: 11px; color: var(--text-muted);
-            white-space: nowrap; align-self: center;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(0,0,0,0.55);
+            align-self: center;
         }
 
-        /* ── TABLE ─────────────────────────────────── */
+        /* ── TABLE ───────────────────────────────────── */
         .table-wrapper {
             overflow: auto;
             max-height: calc(100vh - 175px);
-            background: #fff;
-            border: 1px solid var(--border); border-radius: 3px;
+            background: var(--white);
         }
 
         table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 
         thead th {
-            padding: 9px 12px;
-            text-align: left; font-weight: 600;
-            font-size: 10px; letter-spacing: 0.5px;
-            text-transform: uppercase; color: var(--text-muted);
-            background: var(--surface2);
-            border-bottom: 1px solid var(--border);
-            white-space: nowrap; cursor: pointer; user-select: none;
+            padding: 10px 12px;
+            text-align: left;
+            font-family: var(--font);
+            font-stretch: expanded;
+            font-weight: 700;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: var(--black);
+            color: var(--white);
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
             position: sticky; top: 0; z-index: 2;
         }
-        thead th:hover { color: var(--accent); }
-        thead th.sorted { color: var(--accent); }
-        .sort-icon { opacity: 0.35; margin-left: 3px; font-size: 9px; }
+        thead th:hover { background: var(--green-dark); }
+        thead th.sorted { background: var(--green); color: var(--black); }
+        .sort-icon { opacity: 0.5; margin-left: 4px; font-size: 9px; }
         thead th.sorted .sort-icon { opacity: 1; }
 
-        tbody tr { border-bottom: 1px solid #f5f1eb; transition: background 0.1s; }
+        tbody tr { border-bottom: 1px solid var(--gray2); transition: background 0.1s; }
         tbody tr:last-child { border-bottom: none; }
-        tbody tr:hover { background: #faf7f2; }
-
+        tbody tr:hover { background: #edf2e0; }
         tbody td { padding: 9px 12px; vertical-align: middle; }
 
         .col-art      { min-width: 65px; }
@@ -224,7 +294,7 @@
         .col-region   { min-width: 110px; }
         .col-groesse  { min-width: 65px; text-align: center; }
         .col-jahrgang { min-width: 65px; text-align: center; font-variant-numeric: tabular-nums; }
-        .col-weingut  { min-width: 140px; font-weight: 500; }
+        .col-weingut  { min-width: 140px; font-weight: 700; }
         .col-wein     { min-width: 170px; }
         .col-preis    { min-width: 90px; text-align: right; font-variant-numeric: tabular-nums; }
         .col-parker   { min-width: 65px; text-align: center; }
@@ -232,283 +302,323 @@
         .col-menge    { min-width: 150px; }
 
         .badge {
-            display: inline-block; padding: 2px 7px;
-            border-radius: 10px; font-size: 11px; font-weight: 500;
+            display: inline-block; padding: 2px 8px;
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .badge-ok  { background: #e8f4ea; color: #256330; }
-        .badge-low { background: #fff5e6; color: #c05800; }
-        .badge-nil { background: #fce8e8; color: #b72020; }
+        .badge-ok  { background: #c8d8a0; color: var(--black); }
+        .badge-low { background: #e8d890; color: var(--black); }
+        .badge-nil { background: #e0c0c0; color: var(--black); }
 
-        .parker-score { font-weight: 600; color: var(--accent); }
+        .parker-score { font-weight: 700; }
 
         /* Qty controls */
-        .qty-wrap {
-            display: flex; align-items: center; gap: 5px;
-        }
+        .qty-wrap { display: flex; align-items: center; gap: 4px; }
 
         .qty-btn {
             width: 24px; height: 24px;
-            background: var(--surface2); border: 1px solid var(--border);
-            border-radius: 2px; cursor: pointer; font-size: 13px;
+            background: var(--black); color: var(--white);
+            font-size: 14px; line-height: 1;
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.15s; flex-shrink: 0; line-height: 1;
+            cursor: pointer; flex-shrink: 0;
+            font-family: var(--font); font-weight: 700;
+            transition: background 0.15s;
         }
-        .qty-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .qty-btn:hover { background: var(--green); color: var(--black); }
 
         .qty-input {
             width: 44px; text-align: center;
-            padding: 3px 4px; border: 1px solid var(--border);
-            border-radius: 2px; font-size: 13px; outline: none;
+            padding: 3px 4px;
+            border-bottom: 2px solid var(--black);
+            font-family: var(--font); font-stretch: expanded;
+            font-size: 12px; font-weight: 700;
+            background: transparent; outline: none;
             font-variant-numeric: tabular-nums;
         }
-        .qty-input:focus { border-color: var(--accent); }
 
         .atc-btn {
-            background: var(--accent); color: #fff; border: none;
-            padding: 4px 9px; font-size: 11px; border-radius: 2px;
-            cursor: pointer; white-space: nowrap;
-            transition: background 0.15s; flex-shrink: 0;
+            background: var(--black); color: var(--white);
+            font-family: var(--font); font-stretch: expanded;
+            font-weight: 700; font-size: 10px;
+            letter-spacing: 1px; text-transform: uppercase;
+            padding: 4px 10px; cursor: pointer;
+            white-space: nowrap; flex-shrink: 0;
+            transition: background 0.15s;
         }
-        .atc-btn:hover { background: var(--accent-hover); }
-        .atc-btn.added { background: #2a7038; }
+        .atc-btn:hover { background: var(--green-dark); }
+        .atc-btn.added { background: var(--green); color: var(--black); }
 
-        /* ── EMPTY / UPLOAD HINT ────────────────────── */
+        /* ── EMPTY STATE ─────────────────────────────── */
         .empty-state {
             text-align: center; padding: 80px 24px;
+            background: var(--white);
         }
-        .empty-icon { font-size: 36px; opacity: 0.25; margin-bottom: 16px; }
-        .empty-title { font-size: 17px; font-weight: 400; margin-bottom: 8px; }
-        .empty-text { color: var(--text-muted); margin-bottom: 24px; }
+        .empty-icon { font-size: 32px; opacity: 0.2; margin-bottom: 16px; }
+        .empty-title {
+            font-size: 16px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        .empty-text {
+            font-weight: 400; color: rgba(0,0,0,0.5);
+            margin-bottom: 24px; text-transform: uppercase;
+            font-size: 11px; letter-spacing: 1px;
+        }
 
-        /* ── CART ──────────────────────────────────── */
+        /* ── SECTION HEADER ──────────────────────────── */
         .section-header {
             display: flex; justify-content: space-between;
             align-items: center; margin-bottom: 20px;
         }
         .section-title {
-            font-family: Georgia, serif;
-            font-size: 22px; font-weight: normal;
+            font-size: 18px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2px;
         }
 
+        /* ── CART ────────────────────────────────────── */
         .cart-empty {
             text-align: center; padding: 60px 24px;
-            background: #fff; border: 1px solid var(--border);
-            border-radius: 3px;
+            background: var(--white);
         }
-        .cart-empty p { color: var(--text-muted); margin-bottom: 20px; }
+        .cart-empty p {
+            color: rgba(0,0,0,0.5); margin-bottom: 20px;
+            text-transform: uppercase; font-size: 11px;
+            font-weight: 700; letter-spacing: 1px;
+        }
 
         .cart-block {
-            background: #fff; border: 1px solid var(--border);
-            border-radius: 3px; overflow: hidden;
-            margin-bottom: 16px;
+            background: var(--white);
+            margin-bottom: 2px;
+            overflow-x: auto;
         }
 
         .cart-total-bar {
             display: flex; justify-content: flex-end; align-items: baseline;
-            gap: 20px; padding: 14px 20px;
-            background: #fff; border: 1px solid var(--border);
-            border-radius: 3px; margin-bottom: 20px;
+            gap: 24px; padding: 16px 20px;
+            background: var(--white);
+            margin-bottom: 20px;
         }
-        .cart-total-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
-        .cart-total-value { font-family: Georgia, serif; font-size: 22px; color: var(--accent); }
+        .cart-total-label {
+            font-size: 10px; letter-spacing: 2px;
+            text-transform: uppercase; font-weight: 700;
+            color: rgba(0,0,0,0.5);
+        }
+        .cart-total-value {
+            font-size: 22px; font-weight: 700;
+            letter-spacing: 1px;
+        }
 
         .cart-actions {
             display: flex; justify-content: flex-end; gap: 10px;
         }
 
         .btn-secondary {
-            background: #fff; color: var(--text);
-            border: 1px solid var(--border);
-            padding: 10px 22px; font-size: 11px;
-            letter-spacing: 1px; text-transform: uppercase;
-            cursor: pointer; border-radius: 2px;
-            transition: all 0.2s;
+            background: transparent; color: var(--black);
+            font-family: var(--font); font-stretch: expanded;
+            font-weight: 700; font-size: 11px;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 10px 20px; cursor: pointer;
+            border: 2px solid var(--black);
+            transition: all 0.15s;
         }
-        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-secondary:hover { background: var(--black); color: var(--white); }
 
         .btn-cta {
-            background: var(--accent); color: #fff; border: none;
-            padding: 10px 28px; font-size: 11px;
-            letter-spacing: 1px; text-transform: uppercase;
-            cursor: pointer; border-radius: 2px;
-            transition: background 0.2s;
+            background: var(--black); color: var(--white);
+            font-family: var(--font); font-stretch: expanded;
+            font-weight: 700; font-size: 11px;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 10px 24px; cursor: pointer;
+            transition: background 0.15s;
         }
-        .btn-cta:hover { background: var(--accent-hover); }
+        .btn-cta:hover { background: var(--green-dark); }
 
         .remove-btn {
-            background: none; border: none;
-            color: var(--text-muted); cursor: pointer;
-            font-size: 16px; padding: 4px 6px;
-            transition: color 0.15s; line-height: 1;
+            background: none; color: rgba(0,0,0,0.4);
+            cursor: pointer; font-size: 18px; padding: 4px 6px;
+            line-height: 1; transition: color 0.15s;
+            font-family: var(--font);
         }
-        .remove-btn:hover { color: #b92929; }
+        .remove-btn:hover { color: var(--black); }
 
-        /* ── ORDER FORM ────────────────────────────── */
+        /* ── ORDER FORM ──────────────────────────────── */
         .order-layout {
             display: grid;
             grid-template-columns: 1fr 360px;
             gap: 24px; align-items: start;
         }
-        @media (max-width: 900px) {
-            .order-layout { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 900px) { .order-layout { grid-template-columns: 1fr; } }
 
         .form-card {
-            background: #fff; border: 1px solid var(--border);
-            border-radius: 3px; padding: 32px 36px;
+            background: var(--white);
+            padding: 40px;
         }
         .form-title {
-            font-family: Georgia, serif;
-            font-size: 22px; font-weight: normal;
-            margin-bottom: 28px;
+            font-size: 18px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2px;
+            margin-bottom: 32px;
         }
-        .form-group { margin-bottom: 18px; }
+        .form-group { margin-bottom: 22px; }
         .form-group label {
-            display: block; font-size: 10px;
-            font-weight: 600; letter-spacing: 1px;
-            text-transform: uppercase; color: var(--text-muted);
-            margin-bottom: 6px;
+            display: block;
+            font-size: 9px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(0,0,0,0.5); margin-bottom: 6px;
         }
         .form-group input,
         .form-group textarea {
             width: 100%;
-            padding: 9px 13px; border: 1px solid var(--border);
-            border-radius: 2px; font-size: 13px; font-family: inherit;
+            padding: 7px 0;
+            background: transparent;
+            border-bottom: 2px solid var(--black);
+            font-family: var(--font);
+            font-stretch: expanded;
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--black);
             outline: none; resize: vertical;
-            transition: border-color 0.2s;
         }
-        .form-group input:focus,
-        .form-group textarea:focus { border-color: var(--accent); }
         .form-group textarea { min-height: 72px; }
 
-        .req { color: var(--accent); }
+        .req { color: var(--black); }
 
         .copy-addr-btn {
-            font-size: 11px; color: var(--accent);
-            background: none; border: none; cursor: pointer;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
+            color: rgba(0,0,0,0.5);
+            background: none; cursor: pointer;
             padding: 0; text-decoration: underline;
-            display: block; margin: -10px 0 14px;
+            display: block; margin: -10px 0 18px;
+            font-family: var(--font); font-stretch: expanded;
         }
 
         .form-note {
-            font-size: 11px; color: var(--text-muted);
-            margin-top: 18px; line-height: 1.7;
+            font-size: 10px; color: rgba(0,0,0,0.45);
+            margin-top: 18px; line-height: 1.8;
+            text-transform: uppercase; font-weight: 400;
+            letter-spacing: 0.5px;
         }
 
-        /* Order summary card */
+        /* Order summary sidebar */
         .order-summary {
-            background: #fff; border: 1px solid var(--border);
-            border-radius: 3px; padding: 24px;
+            background: var(--white);
+            padding: 28px;
             position: sticky; top: 80px;
         }
         .order-summary-title {
-            font-size: 10px; font-weight: 600;
-            letter-spacing: 1.5px; text-transform: uppercase;
-            color: var(--text-muted); margin-bottom: 16px;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(0,0,0,0.5); margin-bottom: 16px;
         }
         .sum-item {
             display: flex; justify-content: space-between;
-            padding: 7px 0; border-bottom: 1px solid #f5f1eb;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--gray2);
             font-size: 12px; gap: 12px;
         }
         .sum-item:last-of-type { border-bottom: none; }
-        .sum-item-name { flex: 1; color: var(--text); }
-        .sum-item-qty { color: var(--text-muted); white-space: nowrap; }
-        .sum-item-price { font-weight: 500; white-space: nowrap; }
+        .sum-item-name { flex: 1; }
+        .sum-item-qty { color: rgba(0,0,0,0.45); white-space: nowrap; }
+        .sum-item-price { font-weight: 700; white-space: nowrap; }
         .sum-total {
             display: flex; justify-content: space-between;
             padding-top: 12px; margin-top: 8px;
-            border-top: 2px solid var(--border);
-            font-weight: 600; font-size: 13px;
+            border-top: 2px solid var(--black);
+            font-weight: 700; font-size: 13px;
+            text-transform: uppercase; letter-spacing: 1px;
         }
 
-        /* ── CONFIRMATION ───────────────────────────── */
+        /* ── CONFIRMATION ────────────────────────────── */
         .confirm-wrap {
             text-align: center; padding: 80px 24px;
+            background: var(--white);
         }
         .confirm-icon {
-            width: 56px; height: 56px;
-            background: #e8f4ea; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; color: #2a7038;
-            margin: 0 auto 24px;
+            font-size: 40px; font-weight: 700;
+            margin-bottom: 24px;
         }
         .confirm-title {
-            font-family: Georgia, serif;
-            font-size: 26px; font-weight: normal; margin-bottom: 12px;
+            font-size: 20px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2px;
+            margin-bottom: 12px;
         }
         .confirm-text {
-            color: var(--text-muted); margin-bottom: 32px;
+            color: rgba(0,0,0,0.55); margin-bottom: 32px;
             max-width: 460px; margin-left: auto; margin-right: auto;
-            line-height: 1.7;
+            line-height: 1.8; font-size: 12px;
+            text-transform: uppercase; font-weight: 400; letter-spacing: 0.5px;
         }
 
-        /* ── TOAST ──────────────────────────────────── */
+        /* ── TOKEN MODAL ─────────────────────────────── */
+        .modal-backdrop {
+            position: fixed; inset: 0; background: rgba(92,111,53,0.85);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 500;
+        }
+        .modal-box {
+            background: var(--white);
+            padding: 40px; width: 100%; max-width: 460px;
+        }
+        .modal-box h3 {
+            font-size: 14px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+        .modal-box p {
+            font-size: 11px; color: rgba(0,0,0,0.55);
+            margin-bottom: 24px; line-height: 1.8;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .modal-box code {
+            background: var(--gray);
+            padding: 1px 5px; font-size: 10px;
+        }
+        .modal-box input {
+            width: 100%; padding: 8px 0;
+            border-bottom: 2px solid var(--black);
+            background: transparent;
+            font-family: var(--font); font-size: 13px;
+            outline: none; margin-bottom: 24px;
+        }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+        /* ── TOAST ───────────────────────────────────── */
         .toast {
-            position: fixed; bottom: 24px; right: 24px;
-            background: #1a1a1a; color: #fff;
-            padding: 11px 18px; border-radius: 3px;
-            font-size: 13px; opacity: 0;
-            transform: translateY(8px);
+            position: fixed; bottom: 32px; right: 50px;
+            background: var(--black); color: var(--green);
+            padding: 10px 18px;
+            font-family: var(--font); font-stretch: expanded;
+            font-weight: 700; font-size: 11px;
+            letter-spacing: 1px; text-transform: uppercase;
+            opacity: 0; transform: translateY(8px);
             transition: all 0.25s; z-index: 999;
             pointer-events: none;
         }
         .toast.show { opacity: 1; transform: translateY(0); }
 
-        /* ── ADMIN ──────────────────────────────────── */
-        .admin-only { display: none !important; }
-        body.admin-mode .admin-only { display: inline-flex !important; }
-        body.admin-mode label.admin-only { display: inline-block !important; }
-
-        .admin-badge {
-            font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
-            background: #5a1a00; color: #e8c090; border: 1px solid #8a4020;
-            border-radius: 2px; padding: 2px 7px; margin-left: 8px;
-            vertical-align: middle;
-        }
-
-        /* ── TOKEN MODAL ─────────────────────────────── */
-        .modal-backdrop {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.65);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 500;
-        }
-        .modal-box {
-            background: #fff; border-radius: 3px;
-            padding: 36px 40px; width: 100%; max-width: 460px;
-        }
-        .modal-box h3 {
-            font-family: Georgia, serif; font-size: 18px; font-weight: normal;
-            margin-bottom: 10px;
-        }
-        .modal-box p { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.7; }
-        .modal-box code { font-size: 11px; background: var(--surface2); padding: 1px 5px; border-radius: 2px; }
-        .modal-box input { width: 100%; padding: 9px 13px; border: 1px solid var(--border); border-radius: 2px; font-size: 13px; outline: none; margin-bottom: 16px; font-family: monospace; }
-        .modal-box input:focus { border-color: var(--accent); }
-        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-
-        /* ── RESPONSIVE ─────────────────────────────── */
+        /* ── RESPONSIVE ──────────────────────────────── */
         @media (max-width: 768px) {
-            .view-container { padding: 16px; }
+            header { padding: 12px 16px; }
+            .view-container { padding: 24px 16px; }
             .controls-bar { flex-direction: column; align-items: stretch; }
-            .search-input { min-width: unset; }
             .upload-label { margin-left: 0; }
-            header { padding: 0 16px; }
-            .header-logo small { display: none; }
+            .toast { right: 16px; bottom: 16px; }
+            body { padding: 0; }
         }
     </style>
 </head>
 <body>
 
-<!-- ══════════════ LOGIN SCREEN ══════════════ -->
+<!-- ══════════════ LOGIN ══════════════ -->
 <div id="login-screen">
     <div class="login-box">
-        <div class="login-eyebrow">Cellar Collective</div>
-        <div class="login-title">Raritätenliste</div>
-        <input type="password" id="pw-input" placeholder="Passwort eingeben"
+        <img src="https://cellarcollective.de/resources/logo.png"
+             alt="The Cellar Collective" class="login-logo wobble">
+        <input type="password" id="pw-input"
+               placeholder="Passwort eingeben"
                autocomplete="current-password"
                onkeydown="if(event.key==='Enter') doLogin()">
-        <button class="btn-primary" onclick="doLogin()">Einloggen</button>
+        <button class="btn-primary wobble" onclick="doLogin()">Einloggen</button>
         <div id="login-error"></div>
     </div>
 </div>
@@ -517,18 +627,18 @@
 <div id="app" style="display:none">
 
     <header>
-        <div class="header-logo">
-            Cellar Collective
-            <small>Raritätenliste</small>
-        </div>
+        <a onclick="showView('shop')" style="cursor:pointer">
+            <img src="https://cellarcollective.de/resources/logo.png"
+                 alt="The Cellar Collective" class="header-logo-img">
+        </a>
         <nav>
-            <button class="nav-btn active" id="nav-shop" onclick="showView('shop')">Liste</button>
-            <button class="nav-btn" id="nav-cart" onclick="showView('cart')">
+            <button class="nav-btn wobble active" id="nav-shop" onclick="showView('shop')">→&nbsp;Liste</button>
+            <button class="nav-btn wobble" id="nav-cart" onclick="showView('cart')">
                 Warenkorb
                 <span class="cart-badge hidden" id="cart-badge">0</span>
             </button>
             <span class="admin-badge admin-only">Admin</span>
-            <button class="nav-btn admin-only" onclick="showTokenSetup()" title="GitHub Deploy-Schlüssel">⚙</button>
+            <button class="nav-btn admin-only wobble" onclick="showTokenSetup()" title="Deploy-Schlüssel">⚙</button>
         </nav>
     </header>
 
@@ -537,10 +647,10 @@
         <div class="view-container">
             <div class="controls-bar">
                 <input type="search" class="search-input" id="search-input"
-                       placeholder="Suchen nach Weingut, Wein, Region …"
+                       placeholder="Suchen …"
                        oninput="applyFilters()">
                 <select class="filter-select" id="filter-art" onchange="applyFilters()">
-                    <option value="">Alle Weinarten</option>
+                    <option value="">Alle Arten</option>
                 </select>
                 <select class="filter-select" id="filter-land" onchange="onLandChange()">
                     <option value="">Alle Länder</option>
@@ -549,7 +659,7 @@
                     <option value="">Alle Regionen</option>
                 </select>
                 <span class="results-count" id="results-count"></span>
-                <label class="upload-label admin-only" for="file-input" title="Neue Raritätenliste hochladen (Admin)">↑ Liste aktualisieren</label>
+                <label class="upload-label admin-only wobble" for="file-input">↑ Liste aktualisieren</label>
                 <input type="file" id="file-input" accept=".xlsx,.xls,.csv"
                        style="display:none" onchange="handleUpload(event)">
             </div>
@@ -562,7 +672,7 @@
         <div class="view-container">
             <div class="section-header">
                 <h2 class="section-title">Warenkorb</h2>
-                <button class="btn-secondary" id="clear-cart-btn" onclick="clearCart()">Leeren</button>
+                <button class="btn-secondary wobble" id="clear-cart-btn" onclick="clearCart()">Leeren</button>
             </div>
             <div id="cart-area"></div>
         </div>
@@ -584,28 +694,24 @@
                             <input type="email" id="f-email" required placeholder="ihre@email.de">
                         </div>
                         <div class="form-group">
-                            <label>Telefon <span style="color:var(--text-muted);font-size:9px;letter-spacing:0">(optional)</span></label>
+                            <label>Telefon <span style="opacity:.5">(optional)</span></label>
                             <input type="tel" id="f-phone" placeholder="+49 …">
                         </div>
                         <div class="form-group">
                             <label>Rechnungsadresse <span class="req">*</span></label>
-                            <textarea id="f-invoice" required
-                                      placeholder="Straße Nr., PLZ Ort, Land"></textarea>
+                            <textarea id="f-invoice" required placeholder="Straße Nr., PLZ Ort, Land"></textarea>
                         </div>
                         <button type="button" class="copy-addr-btn"
                                 onclick="copyAddress()">→ Lieferadresse = Rechnungsadresse</button>
                         <div class="form-group">
                             <label>Lieferadresse <span class="req">*</span></label>
-                            <textarea id="f-delivery" required
-                                      placeholder="Straße Nr., PLZ Ort, Land"></textarea>
+                            <textarea id="f-delivery" required placeholder="Straße Nr., PLZ Ort, Land"></textarea>
                         </div>
-                        <button type="submit" class="btn-cta" style="width:100%;padding:12px">
+                        <button type="submit" class="btn-cta wobble" style="width:100%;padding:14px">
                             Anfrage absenden
                         </button>
                         <p class="form-note">
-                            <span class="req">*</span> Pflichtfeld.<br>
-                            Ihre Anfrage wird per E-Mail an Cellar Collective übermittelt. Es handelt sich
-                            um eine unverbindliche Anfrage ohne Kaufverpflichtung.
+                            * Pflichtfeld. Unverbindliche Anfrage ohne Kaufverpflichtung.
                         </p>
                     </form>
                 </div>
@@ -630,10 +736,10 @@
                 <h2 class="confirm-title">Anfrage versendet</h2>
                 <p class="confirm-text">
                     Ihre unverbindliche Anfrage wurde per E-Mail an Cellar Collective weitergeleitet.
-                    Eine Kopie wurde an Ihre angegebene E-Mail-Adresse gesendet.
-                    Das Team wird sich in Kürze bei Ihnen melden.
+                    Eine Kopie wurde an Ihre E-Mail-Adresse gesendet.
+                    Das Team meldet sich in Kürze bei Ihnen.
                 </p>
-                <button class="btn-primary" style="max-width:200px;margin:0 auto;display:block"
+                <button class="btn-primary wobble" style="margin:0 auto;display:block"
                         onclick="startNew()">Neue Anfrage</button>
             </div>
         </div>
@@ -648,10 +754,9 @@
     <div class="modal-box">
         <h3>Deploy-Schlüssel einrichten</h3>
         <p>
-            Geben Sie ein GitHub Personal Access Token ein. Es benötigt nur
-            <code>contents: write</code> Zugriff auf das Repo
-            <code>cellar-collective-shop</code>.<br><br>
-            Token erstellen unter: GitHub → Settings → Developer settings →
+            GitHub Personal Access Token mit
+            <code>contents: write</code> auf <code>cellar-collective-shop</code>.<br><br>
+            Erstellen unter: GitHub → Settings → Developer settings →
             Personal access tokens → Fine-grained tokens
         </p>
         <input type="text" id="token-input" placeholder="github_pat_… oder ghp_…"
@@ -674,11 +779,11 @@ const STORAGE_KEY    = 'cc_wines_v2';
 const WINES_RAW_URL  = 'https://raw.githubusercontent.com/prokopowiczmarkus-cmyk/cellar-collective-shop/main/wines.json';
 const GITHUB_API     = 'https://api.github.com/repos/prokopowiczmarkus-cmyk/cellar-collective-shop/contents/wines.json';
 
-let wines    = [];   // all wine objects from Excel
-let filtered = [];   // currently visible (after filter/sort)
-let cart     = {};   // { origIndex: qty }
+let wines    = [];
+let filtered = [];
+let cart     = {};
 let sortCol  = null;
-let sortDir  = 1;    // 1=asc, -1=desc
+let sortDir  = 1;
 let isAdmin  = false;
 
 const COLS = [
@@ -745,7 +850,6 @@ async function commitToGitHub(winesData) {
     const token = localStorage.getItem('cc_gh_token');
     if (!token) { showTokenSetup(); return false; }
     try {
-        // Fetch current SHA (required for updates)
         let sha = null;
         const info = await fetch(GITHUB_API, {
             headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
@@ -785,8 +889,8 @@ function handleUpload(evt) {
             showToast('Veröffentliche…');
             commitToGitHub(wines).then(ok => {
                 showToast(ok
-                    ? `✓ ${wines.length} Weine veröffentlicht – für alle sichtbar.`
-                    : 'Lokal gespeichert, Veröffentlichung fehlgeschlagen.');
+                    ? `✓ ${wines.length} Weine veröffentlicht.`
+                    : 'Veröffentlichung fehlgeschlagen.');
             });
         } else {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(wines));
@@ -798,7 +902,6 @@ function handleUpload(evt) {
         reader.onload = e => {
             try {
                 const text = e.target.result;
-                // Auto-detect delimiter (semicolon vs comma)
                 const firstLine = text.split(/\r?\n/)[0];
                 const semiCount  = (firstLine.match(/;/g)  || []).length;
                 const commaCount = (firstLine.match(/,/g)  || []).length;
@@ -830,7 +933,6 @@ function handleUpload(evt) {
     }
 }
 
-// Map raw Excel column names → our canonical keys
 const KEY_MAP = {
     'art': 'Art', 'typ': 'Art', 'type': 'Art', 'weinart': 'Art',
     'land': 'Land', 'country': 'Land',
@@ -856,9 +958,7 @@ function normalizeRow(row) {
     const out = {};
     for (const [k, v] of Object.entries(row)) {
         const norm = k.toLowerCase().trim()
-            .replace(/\s+/g, ' ')
-            .replace(/-/g, '')
-            .replace(/\u00ad/g, ''); // soft hyphen
+            .replace(/\s+/g, ' ').replace(/-/g, '').replace(/\u00ad/g, '');
         const mapped = KEY_MAP[norm] || k;
         out[mapped] = v;
     }
@@ -874,8 +974,8 @@ function refreshUI() {
 }
 
 function populateFilterDropdowns() {
-    const arts    = [...new Set(wines.map(w => w.Art).filter(Boolean))].sort();
-    const lands   = [...new Set(wines.map(w => w.Land).filter(Boolean))].sort();
+    const arts  = [...new Set(wines.map(w => w.Art).filter(Boolean))].sort();
+    const lands = [...new Set(wines.map(w => w.Land).filter(Boolean))].sort();
     setOptions('filter-art',  arts);
     setOptions('filter-land', lands);
     updateRegionDropdown();
@@ -895,8 +995,7 @@ function onLandChange() { updateRegionDropdown(); applyFilters(); }
 function updateRegionDropdown() {
     const land = document.getElementById('filter-land')?.value || '';
     const regions = [...new Set(
-        wines.filter(w => !land || w.Land === land)
-             .map(w => w.Region).filter(Boolean)
+        wines.filter(w => !land || w.Land === land).map(w => w.Region).filter(Boolean)
     )].sort();
     const curRegion = document.getElementById('filter-region')?.value || '';
     setOptions('filter-region', regions);
@@ -904,10 +1003,10 @@ function updateRegionDropdown() {
 }
 
 function applyFilters() {
-    const q       = (document.getElementById('search-input')?.value || '').toLowerCase();
-    const art     = document.getElementById('filter-art')?.value    || '';
-    const land    = document.getElementById('filter-land')?.value   || '';
-    const region  = document.getElementById('filter-region')?.value || '';
+    const q      = (document.getElementById('search-input')?.value || '').toLowerCase();
+    const art    = document.getElementById('filter-art')?.value    || '';
+    const land   = document.getElementById('filter-land')?.value   || '';
+    const region = document.getElementById('filter-region')?.value || '';
 
     filtered = wines.filter(w => {
         if (art    && w.Art    !== art)    return false;
@@ -954,10 +1053,10 @@ function renderTable() {
             <div class="empty-state">
                 <div class="empty-icon">🍷</div>
                 <div class="empty-title">Noch keine Weine vorhanden</div>
-                <div class="empty-text">Laden Sie die erste Raritätenliste als Excel-Datei hoch.</div>
+                <div class="empty-text">Laden Sie die erste Raritätenliste hoch.</div>
                 <label class="btn-primary" for="file-input"
-                       style="display:inline-block;cursor:pointer;padding:11px 28px">
-                    Excel-Datei hochladen
+                       style="display:inline-block;cursor:pointer;padding:12px 32px">
+                    Excel hochladen
                 </label>
             </div>` : `
             <div class="empty-state">
@@ -973,7 +1072,7 @@ function renderTable() {
             <div class="empty-state">
                 <div class="empty-icon">🔍</div>
                 <div class="empty-title">Keine Treffer</div>
-                <div class="empty-text">Passen Sie die Filter oder Suche an.</div>
+                <div class="empty-text">Filter oder Suche anpassen.</div>
             </div>`;
         return;
     }
@@ -981,20 +1080,18 @@ function renderTable() {
     const ths = COLS.map(c => {
         const sorted = sortCol === c.key;
         const icon   = sorted ? (sortDir === 1 ? '↑' : '↓') : '↕';
-        return `<th class="${c.cls}${sorted ? ' sorted' : ''}"
-                    onclick="sortBy('${c.key}')">
+        return `<th class="${c.cls}${sorted ? ' sorted' : ''}" onclick="sortBy('${c.key}')">
                     ${c.label}<span class="sort-icon">${icon}</span>
                 </th>`;
     }).join('') + `<th class="col-menge">Menge</th>`;
 
     const tbody = filtered.map(wine => {
-        const oi = wines.indexOf(wine); // original index for cart
+        const oi = wines.indexOf(wine);
         const cq = cart[oi] || 0;
 
         const cells = COLS.map(c => {
             const raw = wine[c.key] ?? '';
             let html  = '';
-
             if (c.fmt === 'price') {
                 const n = parseFloat(String(raw).replace(',', '.'));
                 html = isNaN(n) ? esc(String(raw) || '–') : fmtPrice(n);
@@ -1014,7 +1111,6 @@ function renderTable() {
             } else {
                 html = esc(String(raw));
             }
-
             return `<td class="${c.cls}">${html}</td>`;
         }).join('');
 
@@ -1022,10 +1118,10 @@ function renderTable() {
             <td class="col-menge">
                 <div class="qty-wrap">
                     <button class="qty-btn" onclick="chQty(${oi},-1)">−</button>
-                    <input  class="qty-input" type="number" min="0"
-                            id="qi-${oi}" value="${cq}"
-                            onchange="setQty(${oi},this.value)"
-                            onclick="this.select()">
+                    <input class="qty-input" type="number" min="0"
+                           id="qi-${oi}" value="${cq}"
+                           onchange="setQty(${oi},this.value)"
+                           onclick="this.select()">
                     <button class="qty-btn" onclick="chQty(${oi},1)">+</button>
                     <button class="atc-btn${cq > 0 ? ' added' : ''}"
                             id="atcb-${oi}" onclick="atc(${oi})">
@@ -1061,7 +1157,6 @@ function setQty(oi, val) {
     const n = Math.max(0, parseInt(val) || 0);
     if (n === 0) delete cart[oi]; else cart[oi] = n;
     updateBadge();
-    // sync button
     const b = document.getElementById(`atcb-${oi}`);
     if (b) { b.className = `atc-btn${n > 0 ? ' added' : ''}`; b.textContent = n > 0 ? '✓' : '+ Warenkorb'; }
 }
@@ -1095,7 +1190,6 @@ function removeItem(oi) {
     delete cart[oi];
     updateBadge();
     renderCart();
-    // sync table row if visible
     const inp = document.getElementById(`qi-${oi}`);
     if (inp) { inp.value = 0; setQty(oi, 0); }
 }
@@ -1104,15 +1198,15 @@ function renderCart() {
     const area = document.getElementById('cart-area');
     if (!area) return;
 
-    const items = Object.entries(cart).filter(([,q]) => q > 0);
+    const items    = Object.entries(cart).filter(([,q]) => q > 0);
     const clearBtn = document.getElementById('clear-cart-btn');
 
     if (!items.length) {
         if (clearBtn) clearBtn.style.display = 'none';
         area.innerHTML = `
             <div class="cart-empty">
-                <p>Ihr Warenkorb ist leer.</p>
-                <button class="btn-secondary" onclick="showView('shop')">Zur Raritätenliste</button>
+                <p>Warenkorb ist leer.</p>
+                <button class="btn-secondary wobble" onclick="showView('shop')">Zur Raritätenliste</button>
             </div>`;
         return;
     }
@@ -1140,7 +1234,7 @@ function renderCart() {
                     <button class="qty-btn" onclick="cartChQty(${oi},1)">+</button>
                 </div>
             </td>
-            <td style="text-align:right;font-weight:500">${fmtPrice(st)}</td>
+            <td style="text-align:right;font-weight:700">${fmtPrice(st)}</td>
             <td style="width:36px">
                 <button class="remove-btn" onclick="removeItem(${oi})" title="Entfernen">×</button>
             </td>
@@ -1167,8 +1261,8 @@ function renderCart() {
             <span class="cart-total-value">${fmtPrice(total)}</span>
         </div>
         <div class="cart-actions">
-            <button class="btn-secondary" onclick="showView('shop')">← Weiter stöbern</button>
-            <button class="btn-cta"       onclick="showView('order')">Unverbindlich Anfragen →</button>
+            <button class="btn-secondary wobble" onclick="showView('shop')">← Weiter stöbern</button>
+            <button class="btn-cta wobble" onclick="showView('order')">Unverbindlich Anfragen →</button>
         </div>`;
 }
 
@@ -1213,8 +1307,7 @@ function renderOrderSummary() {
 }
 
 function copyAddress() {
-    const inv = document.getElementById('f-invoice').value;
-    document.getElementById('f-delivery').value = inv;
+    document.getElementById('f-delivery').value = document.getElementById('f-invoice').value;
 }
 
 function submitOrder(evt) {
@@ -1239,37 +1332,22 @@ function submitOrder(evt) {
         return `${pad(w.Weingut||'',22)} | ${pad(w.Wein||'',24)} | ${pad(String(w.Jahrgang||''),6)} | ${pad(String(w.Größe||''),8)} | ${pad(String(w.Art||''),8)} | ${fmtPrice(p).padStart(10)} | ${String(qty)+'x'} | ${fmtPrice(st).padStart(10)}`;
     }).filter(Boolean);
 
-    const header = `${pad('Weingut',22)} | ${pad('Wein',24)} | ${pad('Jg.',6)} | ${pad('Größe',8)} | ${pad('Art',8)} | ${'Preis/Fl.'.padStart(10)} | Menge | ${'Gesamt'.padStart(10)}`;
+    const header  = `${pad('Weingut',22)} | ${pad('Wein',24)} | ${pad('Jg.',6)} | ${pad('Größe',8)} | ${pad('Art',8)} | ${'Preis/Fl.'.padStart(10)} | Menge | ${'Gesamt'.padStart(10)}`;
     const divider = '-'.repeat(header.length);
 
     const body = [
-        'UNVERBINDLICHE WEINANFRAGE – CELLAR COLLECTIVE',
-        '='.repeat(50),
-        '',
-        'KONTAKTDATEN',
-        '-'.repeat(30),
+        'UNVERBINDLICHE WEINANFRAGE – THE CELLAR COLLECTIVE',
+        '='.repeat(52), '',
+        'KONTAKTDATEN', '-'.repeat(30),
         `Name:             ${name}`,
         `E-Mail:           ${email}`,
         phone ? `Telefon:          ${phone}` : null,
-        '',
-        'Rechnungsadresse:',
-        invoice,
-        '',
-        'Lieferadresse:',
-        delivery,
-        '',
-        '='.repeat(50),
-        'ANGEFRAGTE WEINE',
-        '='.repeat(50),
-        '',
-        header,
-        divider,
-        ...wineRows,
-        divider,
-        '',
+        '', 'Rechnungsadresse:', invoice,
+        '', 'Lieferadresse:',   delivery,
+        '', '='.repeat(52), 'ANGEFRAGTE WEINE', '='.repeat(52), '',
+        header, divider, ...wineRows, divider, '',
         `GESAMTBETRAG (unverbindlich): ${fmtPrice(total)}`,
-        '',
-        '='.repeat(50),
+        '', '='.repeat(52),
         'Unverbindliche Anfrage über cellarcollective.de',
     ].filter(l => l !== null).join('\n');
 
@@ -1277,9 +1355,8 @@ function submitOrder(evt) {
     const mailto  = `mailto:${EMAIL_TO}?cc=${encodeURIComponent(email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
     if (mailto.length > 8000) {
-        // Fallback: clipboard
         copyToClipboard(body);
-        alert(`Die Anfrage ist zu lang für das E-Mail-Programm.\n\nDer Inhalt wurde in die Zwischenablage kopiert.\nBitte manuell senden an: ${EMAIL_TO}`);
+        alert(`Die Anfrage ist zu lang für mailto.\n\nInhalt wurde in die Zwischenablage kopiert.\nBitte manuell senden an: ${EMAIL_TO}`);
     } else {
         window.location.href = mailto;
     }
@@ -1301,16 +1378,13 @@ function startNew() {
 function showView(name) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-
     document.getElementById(`view-${name}`)?.classList.add('active');
     document.getElementById(`nav-${name}`)?.classList.add('active');
-
     if (name === 'cart')  renderCart();
     if (name === 'order') {
         if (!Object.keys(cart).length) { showView('cart'); return; }
         renderOrderSummary();
     }
-
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1321,48 +1395,28 @@ function fmtPrice(n) {
     if (isNaN(n)) return '–';
     return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 }
-
-function parsePrice(raw) {
-    return parseFloat(String(raw || '0').replace(',', '.')) || 0;
-}
-
+function parsePrice(raw) { return parseFloat(String(raw || '0').replace(',', '.')) || 0; }
 function esc(s) {
-    return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
 function pad(s, n) {
     const str = String(s);
     return str.length >= n ? str.slice(0, n) : str + ' '.repeat(n - str.length);
 }
-
 function showToast(msg) {
     const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
+    t.textContent = msg; t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2500);
 }
-
 function copyToClipboard(text) {
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-    } else {
-        fallbackCopy(text);
-    }
+    if (navigator.clipboard) { navigator.clipboard.writeText(text).catch(() => fallbackCopy(text)); }
+    else { fallbackCopy(text); }
 }
-
 function fallbackCopy(text) {
     const el = document.createElement('textarea');
-    el.value = text;
-    el.style.position = 'fixed';
-    el.style.opacity = '0';
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand('copy');
-    document.body.removeChild(el);
+    el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+    document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1373,11 +1427,7 @@ function showTokenSetup() {
     document.getElementById('token-modal').style.display = 'flex';
     setTimeout(() => document.getElementById('token-input').focus(), 50);
 }
-
-function closeTokenModal() {
-    document.getElementById('token-modal').style.display = 'none';
-}
-
+function closeTokenModal() { document.getElementById('token-modal').style.display = 'none'; }
 function saveToken() {
     const val = document.getElementById('token-input').value.trim();
     if (!val) { showToast('Bitte Token eingeben.'); return; }
