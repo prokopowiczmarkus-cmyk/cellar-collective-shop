@@ -455,6 +455,38 @@
         }
         .toast.show { opacity: 1; transform: translateY(0); }
 
+        /* ── ADMIN ──────────────────────────────────── */
+        .admin-only { display: none !important; }
+        body.admin-mode .admin-only { display: inline-flex !important; }
+        body.admin-mode label.admin-only { display: inline-block !important; }
+
+        .admin-badge {
+            font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+            background: #5a1a00; color: #e8c090; border: 1px solid #8a4020;
+            border-radius: 2px; padding: 2px 7px; margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* ── TOKEN MODAL ─────────────────────────────── */
+        .modal-backdrop {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 500;
+        }
+        .modal-box {
+            background: #fff; border-radius: 3px;
+            padding: 36px 40px; width: 100%; max-width: 460px;
+        }
+        .modal-box h3 {
+            font-family: Georgia, serif; font-size: 18px; font-weight: normal;
+            margin-bottom: 10px;
+        }
+        .modal-box p { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.7; }
+        .modal-box code { font-size: 11px; background: var(--surface2); padding: 1px 5px; border-radius: 2px; }
+        .modal-box input { width: 100%; padding: 9px 13px; border: 1px solid var(--border); border-radius: 2px; font-size: 13px; outline: none; margin-bottom: 16px; font-family: monospace; }
+        .modal-box input:focus { border-color: var(--accent); }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
         /* ── RESPONSIVE ─────────────────────────────── */
         @media (max-width: 768px) {
             .view-container { padding: 16px; }
@@ -495,6 +527,8 @@
                 Warenkorb
                 <span class="cart-badge hidden" id="cart-badge">0</span>
             </button>
+            <span class="admin-badge admin-only">Admin</span>
+            <button class="nav-btn admin-only" onclick="showTokenSetup()" title="GitHub Deploy-Schlüssel">⚙</button>
         </nav>
     </header>
 
@@ -515,7 +549,7 @@
                     <option value="">Alle Regionen</option>
                 </select>
                 <span class="results-count" id="results-count"></span>
-                <label class="upload-label" for="file-input" title="Excel-Datei hochladen">↑ Datei laden</label>
+                <label class="upload-label admin-only" for="file-input" title="Neue Raritätenliste hochladen (Admin)">↑ Liste aktualisieren</label>
                 <input type="file" id="file-input" accept=".xlsx,.xls,.csv"
                        style="display:none" onchange="handleUpload(event)">
             </div>
@@ -609,19 +643,43 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- ══════════════ TOKEN MODAL ══════════════ -->
+<div class="modal-backdrop" id="token-modal" style="display:none">
+    <div class="modal-box">
+        <h3>Deploy-Schlüssel einrichten</h3>
+        <p>
+            Geben Sie ein GitHub Personal Access Token ein. Es benötigt nur
+            <code>contents: write</code> Zugriff auf das Repo
+            <code>cellar-collective-shop</code>.<br><br>
+            Token erstellen unter: GitHub → Settings → Developer settings →
+            Personal access tokens → Fine-grained tokens
+        </p>
+        <input type="text" id="token-input" placeholder="github_pat_… oder ghp_…"
+               onkeydown="if(event.key==='Enter') saveToken()">
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeTokenModal()">Abbrechen</button>
+            <button class="btn-cta" onclick="saveToken()">Speichern</button>
+        </div>
+    </div>
+</div>
+
 <script>
 /* ══════════════════════════════════════════════════════
    CONSTANTS & STATE
 ══════════════════════════════════════════════════════ */
-const PASSWORD    = 'cellarcollectivecommunity';
-const EMAIL_TO    = 'mail@cellarcollective.de';
-const STORAGE_KEY = 'cc_wines_v2';
+const PASSWORD       = 'cellarcollectivecommunity';
+const ADMIN_PASSWORD = 'cc-admin-2026';
+const EMAIL_TO       = 'mail@cellarcollective.de';
+const STORAGE_KEY    = 'cc_wines_v2';
+const WINES_RAW_URL  = 'https://raw.githubusercontent.com/prokopowiczmarkus-cmyk/cellar-collective-shop/main/wines.json';
+const GITHUB_API     = 'https://api.github.com/repos/prokopowiczmarkus-cmyk/cellar-collective-shop/contents/wines.json';
 
 let wines    = [];   // all wine objects from Excel
 let filtered = [];   // currently visible (after filter/sort)
 let cart     = {};   // { origIndex: qty }
 let sortCol  = null;
 let sortDir  = 1;    // 1=asc, -1=desc
+let isAdmin  = false;
 
 const COLS = [
     { key: 'Art',                  label: 'Art',       cls: 'col-art' },
@@ -641,10 +699,16 @@ const COLS = [
 ══════════════════════════════════════════════════════ */
 function doLogin() {
     const val = document.getElementById('pw-input').value;
-    if (val === PASSWORD) {
+    if (val === PASSWORD || val === ADMIN_PASSWORD) {
+        isAdmin = (val === ADMIN_PASSWORD);
         sessionStorage.setItem('cc_auth', '1');
+        sessionStorage.setItem('cc_role', isAdmin ? 'admin' : 'user');
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
+        if (isAdmin) {
+            document.body.classList.add('admin-mode');
+            if (!localStorage.getItem('cc_gh_token')) showTokenSetup();
+        }
         loadSaved();
     } else {
         document.getElementById('login-error').textContent = 'Falsches Passwort.';
@@ -656,12 +720,53 @@ function doLogin() {
 /* ══════════════════════════════════════════════════════
    DATA
 ══════════════════════════════════════════════════════ */
-function loadSaved() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-        try { wines = JSON.parse(raw); } catch(e) { wines = []; }
+async function loadSaved() {
+    const ok = await loadFromGitHub();
+    if (!ok) {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) { try { wines = JSON.parse(raw); } catch(e) { wines = []; } }
     }
     refreshUI();
+}
+
+async function loadFromGitHub() {
+    try {
+        const res = await fetch(WINES_RAW_URL + '?t=' + Date.now());
+        if (res.ok) {
+            wines = await res.json();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(wines));
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
+
+async function commitToGitHub(winesData) {
+    const token = localStorage.getItem('cc_gh_token');
+    if (!token) { showTokenSetup(); return false; }
+    try {
+        // Fetch current SHA (required for updates)
+        let sha = null;
+        const info = await fetch(GITHUB_API, {
+            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+        });
+        if (info.ok) { sha = (await info.json()).sha; }
+
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(winesData))));
+        const date    = new Date().toLocaleDateString('de-DE');
+        const res = await fetch(GITHUB_API, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json' },
+            body: JSON.stringify({ message: `Raritätenliste – ${date}`, content, ...(sha && { sha }) })
+        });
+        if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem('cc_gh_token');
+            showTokenSetup();
+            showToast('Token ungültig – bitte neu eingeben.');
+            return false;
+        }
+        return res.ok;
+    } catch(e) { console.error(e); return false; }
 }
 
 function handleUpload(evt) {
@@ -675,9 +780,18 @@ function handleUpload(evt) {
     function processRows(rows) {
         if (!rows.length) { showToast('Keine Daten in der Datei gefunden.'); return; }
         wines = rows.map(normalizeRow);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(wines));
         refreshUI();
-        showToast(`${wines.length} Weine geladen.`);
+        if (isAdmin) {
+            showToast('Veröffentliche…');
+            commitToGitHub(wines).then(ok => {
+                showToast(ok
+                    ? `✓ ${wines.length} Weine veröffentlicht – für alle sichtbar.`
+                    : 'Lokal gespeichert, Veröffentlichung fehlgeschlagen.');
+            });
+        } else {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(wines));
+            showToast(`${wines.length} Weine geladen.`);
+        }
     }
 
     if (isCSV) {
@@ -836,15 +950,20 @@ function renderTable() {
     if (!area) return;
 
     if (!wines.length) {
-        area.innerHTML = `
+        area.innerHTML = isAdmin ? `
             <div class="empty-state">
                 <div class="empty-icon">🍷</div>
-                <div class="empty-title">Keine Weine geladen</div>
-                <div class="empty-text">Laden Sie die Raritätenliste als Excel-Datei (.xlsx) hoch.</div>
+                <div class="empty-title">Noch keine Weine vorhanden</div>
+                <div class="empty-text">Laden Sie die erste Raritätenliste als Excel-Datei hoch.</div>
                 <label class="btn-primary" for="file-input"
                        style="display:inline-block;cursor:pointer;padding:11px 28px">
                     Excel-Datei hochladen
                 </label>
+            </div>` : `
+            <div class="empty-state">
+                <div class="empty-icon">🍷</div>
+                <div class="empty-title">Liste wird vorbereitet</div>
+                <div class="empty-text">Die Raritätenliste wurde noch nicht veröffentlicht.</div>
             </div>`;
         return;
     }
@@ -1247,10 +1366,33 @@ function fallbackCopy(text) {
 }
 
 /* ══════════════════════════════════════════════════════
+   TOKEN MODAL
+══════════════════════════════════════════════════════ */
+function showTokenSetup() {
+    document.getElementById('token-input').value = localStorage.getItem('cc_gh_token') || '';
+    document.getElementById('token-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('token-input').focus(), 50);
+}
+
+function closeTokenModal() {
+    document.getElementById('token-modal').style.display = 'none';
+}
+
+function saveToken() {
+    const val = document.getElementById('token-input').value.trim();
+    if (!val) { showToast('Bitte Token eingeben.'); return; }
+    localStorage.setItem('cc_gh_token', val);
+    closeTokenModal();
+    showToast('Deploy-Schlüssel gespeichert.');
+}
+
+/* ══════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════ */
 (function init() {
     if (sessionStorage.getItem('cc_auth') === '1') {
+        isAdmin = sessionStorage.getItem('cc_role') === 'admin';
+        if (isAdmin) document.body.classList.add('admin-mode');
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         loadSaved();
