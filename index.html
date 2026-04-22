@@ -658,6 +658,12 @@
                 <select class="filter-select" id="filter-region" onchange="applyFilters()">
                     <option value="">Alle Regionen</option>
                 </select>
+                <select class="filter-select" id="filter-jahrgang" onchange="applyFilters()">
+                    <option value="">Alle Jahrgänge</option>
+                </select>
+                <select class="filter-select" id="filter-groesse" onchange="applyFilters()">
+                    <option value="">Alle Größen</option>
+                </select>
                 <span class="results-count" id="results-count"></span>
                 <label class="upload-label admin-only wobble" for="file-input">↑ Liste aktualisieren</label>
                 <input type="file" id="file-input" accept=".xlsx,.xls,.csv"
@@ -976,8 +982,19 @@ function refreshUI() {
 function populateFilterDropdowns() {
     const arts  = [...new Set(wines.map(w => w.Art).filter(Boolean))].sort();
     const lands = [...new Set(wines.map(w => w.Land).filter(Boolean))].sort();
-    setOptions('filter-art',  arts);
-    setOptions('filter-land', lands);
+    const jahrgaenge = [...new Set(wines.map(w => w.Jahrgang).filter(Boolean))]
+        .sort((a, b) => {
+            const na = parseInt(a), nb = parseInt(b);
+            if (!isNaN(na) && !isNaN(nb)) return na - nb;
+            if (!isNaN(na)) return -1;
+            if (!isNaN(nb)) return 1;
+            return String(a).localeCompare(String(b));
+        });
+    const groessen = [...new Set(wines.map(w => w.Größe).filter(Boolean))].sort();
+    setOptions('filter-art',      arts);
+    setOptions('filter-land',     lands);
+    setOptions('filter-jahrgang', jahrgaenge);
+    setOptions('filter-groesse',  groessen);
     updateRegionDropdown();
 }
 
@@ -1003,15 +1020,19 @@ function updateRegionDropdown() {
 }
 
 function applyFilters() {
-    const q      = (document.getElementById('search-input')?.value || '').toLowerCase();
-    const art    = document.getElementById('filter-art')?.value    || '';
-    const land   = document.getElementById('filter-land')?.value   || '';
-    const region = document.getElementById('filter-region')?.value || '';
+    const q        = (document.getElementById('search-input')?.value    || '').toLowerCase();
+    const art      = document.getElementById('filter-art')?.value      || '';
+    const land     = document.getElementById('filter-land')?.value     || '';
+    const region   = document.getElementById('filter-region')?.value   || '';
+    const jahrgang = document.getElementById('filter-jahrgang')?.value || '';
+    const groesse  = document.getElementById('filter-groesse')?.value  || '';
 
     filtered = wines.filter(w => {
-        if (art    && w.Art    !== art)    return false;
-        if (land   && w.Land   !== land)   return false;
-        if (region && w.Region !== region) return false;
+        if (art      && w.Art                !== art)      return false;
+        if (land     && w.Land               !== land)     return false;
+        if (region   && w.Region             !== region)   return false;
+        if (jahrgang && String(w.Jahrgang)   !== jahrgang) return false;
+        if (groesse  && w.Größe              !== groesse)  return false;
         if (q) {
             const hay = [w.Weingut, w.Wein, w.Region, w.Land, w.Art, w.Jahrgang]
                 .map(x => String(x || '')).join(' ').toLowerCase();
