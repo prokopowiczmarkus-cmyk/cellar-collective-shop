@@ -863,6 +863,7 @@ const FILTER_DEFS = [
     { id: 'filter-art',      label: 'Alle Arten',     colKey: 'Art' },
     { id: 'filter-land',     label: 'Alle Länder',    colKey: 'Land' },
     { id: 'filter-region',   label: 'Alle Regionen',  colKey: 'Region' },
+    { id: 'filter-weingut',  label: 'Alle Weingüter', colKey: 'Weingut' },
     { id: 'filter-jahrgang', label: 'Alle Jahrgänge', colKey: 'Jahrgang' },
     { id: 'filter-groesse',  label: 'Alle Größen',    colKey: 'Größe' },
 ];
@@ -1124,9 +1125,11 @@ function populateFilterOptions() {
             if (!isNaN(nb)) return 1;
             return String(a).localeCompare(String(b));
         });
-    const groessen = [...new Set(wines.map(w => w.Größe).filter(Boolean))].sort();
+    const groessen  = [...new Set(wines.map(w => w.Größe).filter(Boolean))].sort();
+    const weingueter = [...new Set(wines.map(w => w.Weingut).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de'));
     setOptions('filter-art',      arts);
     setOptions('filter-land',     lands);
+    setOptions('filter-weingut',  weingueter);
     setOptions('filter-jahrgang', jahrgaenge);
     setOptions('filter-groesse',  groessen);
     updateRegionDropdown();
@@ -1158,6 +1161,7 @@ function applyFilters() {
     const art      = document.getElementById('filter-art')?.value      || '';
     const land     = document.getElementById('filter-land')?.value     || '';
     const region   = document.getElementById('filter-region')?.value   || '';
+    const weingut  = document.getElementById('filter-weingut')?.value  || '';
     const jahrgang = document.getElementById('filter-jahrgang')?.value || '';
     const groesse  = document.getElementById('filter-groesse')?.value  || '';
 
@@ -1165,6 +1169,7 @@ function applyFilters() {
         if (art      && w.Art                !== art)      return false;
         if (land     && w.Land               !== land)     return false;
         if (region   && w.Region             !== region)   return false;
+        if (weingut  && w.Weingut            !== weingut)  return false;
         if (jahrgang && String(w.Jahrgang)   !== jahrgang) return false;
         if (groesse  && w.Größe              !== groesse)  return false;
         if (q) {
