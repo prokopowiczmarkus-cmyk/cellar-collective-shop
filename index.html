@@ -378,6 +378,20 @@
         .atc-btn:hover { background: var(--green-dark); }
         .atc-btn.added { background: var(--green); color: var(--black); }
 
+        /* Inline availability editor (admin) */
+        .avail-input {
+            width: 48px; text-align: center;
+            padding: 2px 4px;
+            border: 1px solid rgba(0,0,0,0.25);
+            border-bottom: 2px solid var(--black);
+            font-family: var(--font); font-stretch: expanded;
+            font-size: 12px; font-weight: 700;
+            background: #fffef8; outline: none;
+            font-variant-numeric: tabular-nums;
+            cursor: text;
+        }
+        .avail-input:focus { border-color: var(--black); background: #fff; }
+
         /* ── EMPTY STATE ─────────────────────────────── */
         .empty-state {
             text-align: center; padding: 80px 24px;
@@ -1226,6 +1240,15 @@ function sortBy(key) {
     applyFilters();
 }
 
+function updateAvail(oi, val) {
+    const n = parseInt(val);
+    wines[oi]['Verfügbar'] = isNaN(n) ? val : n;
+    showToast('Speichere…');
+    commitToGitHub(wines).then(ok => {
+        showToast(ok ? '✓ Verfügbarkeit aktualisiert.' : 'Fehler beim Speichern.');
+    });
+}
+
 function renderTable() {
     const area = document.getElementById('table-area');
     if (!area) return;
@@ -1296,7 +1319,13 @@ function renderTable() {
                 html = raw ? `<span class="parker-score">${esc(String(raw))}</span>` : '–';
             } else if (c.fmt === 'avail') {
                 const n = parseInt(raw);
-                if (isNaN(n) || raw === '') {
+                if (isAdmin) {
+                    html = `<input class="avail-input" type="number" min="0"
+                                   value="${esc(String(raw === '' ? '' : (isNaN(n) ? raw : n)))}"
+                                   onblur="updateAvail(${oi}, this.value)"
+                                   onkeydown="if(event.key==='Enter') this.blur()"
+                                   onclick="this.select()" title="Verfügbarkeit bearbeiten">`;
+                } else if (isNaN(n) || raw === '') {
                     html = raw ? `<span class="badge badge-ok">${esc(String(raw))}</span>` : '–';
                 } else if (n <= 0) {
                     html = `<span class="badge badge-nil">${n}</span>`;
