@@ -668,6 +668,7 @@
             </button>
             <span class="admin-badge admin-only">Admin</span>
             <button class="nav-btn admin-only wobble" onclick="showTokenSetup()" title="Deploy-Schlüssel">⚙</button>
+            <button class="nav-btn wobble" onclick="doLogout()" title="Abmelden">↩ Logout</button>
         </nav>
     </header>
 
@@ -1697,6 +1698,11 @@ function showTokenSetup() {
     document.getElementById('token-modal').style.display = 'flex';
     setTimeout(() => document.getElementById('token-input').focus(), 50);
 }
+function doLogout() {
+    sessionStorage.clear();
+    location.reload();
+}
+
 function closeTokenModal() { document.getElementById('token-modal').style.display = 'none'; }
 function saveToken() {
     const val = document.getElementById('token-input').value.trim();
