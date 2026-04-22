@@ -256,6 +256,32 @@
             align-self: center;
         }
 
+        /* ── DRAG & DROP (admin) ─────────────────────── */
+        /* Column headers */
+        body.admin-mode thead th { cursor: grab; }
+        body.admin-mode thead th:active { cursor: grabbing; }
+        thead th.th-dragging  { opacity: 0.35; background: var(--green-dark) !important; color: var(--white) !important; }
+        thead th.th-drag-over { box-shadow: inset -4px 0 0 #a0c040 !important; }
+
+        /* Filter wraps */
+        .filter-wrap {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 0;
+        }
+        .drag-handle {
+            display: none;
+            color: rgba(0,0,0,0.35);
+            font-size: 15px;
+            cursor: grab;
+            padding: 0 3px 7px;
+            user-select: none;
+            line-height: 1;
+        }
+        body.admin-mode .drag-handle { display: block; }
+        .filter-wrap.fw-dragging  { opacity: 0.35; }
+        .filter-wrap.fw-drag-over { box-shadow: -4px 0 0 var(--black); }
+
         /* ── TABLE ───────────────────────────────────── */
         .table-wrapper {
             overflow: auto;
@@ -280,6 +306,7 @@
             cursor: pointer;
             user-select: none;
             position: sticky; top: 0; z-index: 2;
+            transition: background 0.15s;
         }
         thead th:hover { background: var(--green-dark); }
         thead th.sorted { background: var(--green); color: var(--black); }
@@ -647,25 +674,12 @@
     <!-- ── SHOP ── -->
     <div id="view-shop" class="view active">
         <div class="view-container">
-            <div class="controls-bar">
+            <div class="controls-bar" id="controls-bar">
                 <input type="search" class="search-input" id="search-input"
                        placeholder="Suchen …"
                        oninput="applyFilters()">
-                <select class="filter-select" id="filter-art" onchange="applyFilters()">
-                    <option value="">Alle Arten</option>
-                </select>
-                <select class="filter-select" id="filter-land" onchange="onLandChange()">
-                    <option value="">Alle Länder</option>
-                </select>
-                <select class="filter-select" id="filter-region" onchange="applyFilters()">
-                    <option value="">Alle Regionen</option>
-                </select>
-                <select class="filter-select" id="filter-jahrgang" onchange="applyFilters()">
-                    <option value="">Alle Jahrgänge</option>
-                </select>
-                <select class="filter-select" id="filter-groesse" onchange="applyFilters()">
-                    <option value="">Alle Größen</option>
-                </select>
+                <!-- filters rendered dynamically here -->
+                <div id="filter-bar" style="display:contents"></div>
                 <span class="results-count" id="results-count"></span>
                 <label class="upload-label admin-only wobble" for="file-input">↑ Liste aktualisieren</label>
                 <input type="file" id="file-input" accept=".xlsx,.xls,.csv"
@@ -813,6 +827,8 @@ const EMAIL_TO       = 'mail@cellarcollective.de';
 const STORAGE_KEY    = 'cc_wines_v2';
 const WINES_RAW_URL  = 'https://raw.githubusercontent.com/prokopowiczmarkus-cmyk/cellar-collective-shop/main/wines.json';
 const GITHUB_API     = 'https://api.github.com/repos/prokopowiczmarkus-cmyk/cellar-collective-shop/contents/wines.json';
+const LAYOUT_RAW_URL = 'https://raw.githubusercontent.com/prokopowiczmarkus-cmyk/cellar-collective-shop/main/layout.json';
+const LAYOUT_API     = 'https://api.github.com/repos/prokopowiczmarkus-cmyk/cellar-collective-shop/contents/layout.json';
 
 let wines    = [];
 let filtered = [];
@@ -820,6 +836,14 @@ let cart     = {};
 let sortCol  = null;
 let sortDir  = 1;
 let isAdmin  = false;
+
+// Layout state
+let colOrder    = null;  // array of COLS keys in display order
+let filterOrder = null;  // array of FILTER_DEFS ids in display order
+
+// Drag state
+let dragColIdx   = null;
+let dragFilterId = null;
 
 const COLS = [
     { key: 'Art',                  label: 'Art',       cls: 'col-art' },
@@ -832,6 +856,14 @@ const COLS = [
     { key: 'Verkaufspreis brutto', label: 'Preis',     cls: 'col-preis', fmt: 'price' },
     { key: 'Parker',               label: 'Parker',    cls: 'col-parker', fmt: 'parker' },
     { key: 'Verfügbar',            label: 'Verfügbar', cls: 'col-avail',  fmt: 'avail' },
+];
+
+const FILTER_DEFS = [
+    { id: 'filter-art',      label: 'Alle Arten',     colKey: 'Art' },
+    { id: 'filter-land',     label: 'Alle Länder',    colKey: 'Land' },
+    { id: 'filter-region',   label: 'Alle Regionen',  colKey: 'Region' },
+    { id: 'filter-jahrgang', label: 'Alle Jahrgänge', colKey: 'Jahrgang' },
+    { id: 'filter-groesse',  label: 'Alle Größen',    colKey: 'Größe' },
 ];
 
 /* ══════════════════════════════════════════════════════
@@ -861,11 +893,17 @@ function doLogin() {
    DATA
 ══════════════════════════════════════════════════════ */
 async function loadSaved() {
-    const ok = await loadFromGitHub();
-    if (!ok) {
+    const [winesOk, layoutOk] = await Promise.all([loadFromGitHub(), loadLayoutFromGitHub()]);
+    if (!winesOk) {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) { try { wines = JSON.parse(raw); } catch(e) { wines = []; } }
     }
+    if (!layoutOk) {
+        const rawL = localStorage.getItem('cc_layout_v1');
+        if (rawL) { try { const l = JSON.parse(rawL); colOrder = l.columns; filterOrder = l.filters; } catch(e) {} }
+    }
+    if (!colOrder)    colOrder    = COLS.map(c => c.key);
+    if (!filterOrder) filterOrder = FILTER_DEFS.map(f => f.id);
     refreshUI();
 }
 
@@ -875,6 +913,20 @@ async function loadFromGitHub() {
         if (res.ok) {
             wines = await res.json();
             localStorage.setItem(STORAGE_KEY, JSON.stringify(wines));
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
+
+async function loadLayoutFromGitHub() {
+    try {
+        const res = await fetch(LAYOUT_RAW_URL + '?t=' + Date.now());
+        if (res.ok) {
+            const l = await res.json();
+            colOrder    = Array.isArray(l.columns)    ? l.columns    : COLS.map(c => c.key);
+            filterOrder = Array.isArray(l.filters)    ? l.filters    : FILTER_DEFS.map(f => f.id);
+            localStorage.setItem('cc_layout_v1', JSON.stringify({ columns: colOrder, filters: filterOrder }));
             return true;
         }
     } catch(e) {}
@@ -903,6 +955,31 @@ async function commitToGitHub(winesData) {
             showTokenSetup();
             showToast('Token ungültig – bitte neu eingeben.');
             return false;
+        }
+        return res.ok;
+    } catch(e) { console.error(e); return false; }
+}
+
+async function commitLayoutToGitHub() {
+    const token = localStorage.getItem('cc_gh_token');
+    if (!token) { showTokenSetup(); return false; }
+    const layout = { columns: colOrder, filters: filterOrder };
+    try {
+        let sha = null;
+        const info = await fetch(LAYOUT_API, {
+            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+        });
+        if (info.ok) { sha = (await info.json()).sha; }
+
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(layout))));
+        const res = await fetch(LAYOUT_API, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json' },
+            body: JSON.stringify({ message: 'Layout-Update', content, ...(sha && { sha }) })
+        });
+        if (res.ok) {
+            localStorage.setItem('cc_layout_v1', JSON.stringify(layout));
+            showToast('Layout gespeichert.');
         }
         return res.ok;
     } catch(e) { console.error(e); return false; }
@@ -1004,11 +1081,38 @@ function normalizeRow(row) {
    FILTERS & RENDER
 ══════════════════════════════════════════════════════ */
 function refreshUI() {
-    populateFilterDropdowns();
+    renderFilters();
+    populateFilterOptions();
     applyFilters();
 }
 
-function populateFilterDropdowns() {
+/* Render filter dropdowns in the order defined by filterOrder */
+function renderFilters() {
+    const bar = document.getElementById('filter-bar');
+    if (!bar) return;
+    const order = filterOrder || FILTER_DEFS.map(f => f.id);
+    bar.innerHTML = order.map(id => {
+        const def = FILTER_DEFS.find(f => f.id === id);
+        if (!def) return '';
+        const onChange = id === 'filter-land' ? 'onLandChange()' : 'applyFilters()';
+        const dragAttrs = isAdmin
+            ? `draggable="true"
+               ondragstart="onFilterDragStart(event)"
+               ondragover="onFilterDragOver(event)"
+               ondrop="onFilterDrop(event)"
+               ondragend="onFilterDragEnd(event)"`
+            : '';
+        return `<div class="filter-wrap" data-filter-id="${id}" ${dragAttrs}>
+                    <span class="drag-handle" title="Verschieben">⠿</span>
+                    <select class="filter-select" id="${id}" onchange="${onChange}">
+                        <option value="">${def.label}</option>
+                    </select>
+                </div>`;
+    }).join('');
+}
+
+/* Populate the options of all filter selects */
+function populateFilterOptions() {
     const arts  = [...new Set(wines.map(w => w.Art).filter(Boolean))].sort();
     const lands = [...new Set(wines.map(w => w.Land).filter(Boolean))].sort();
     const jahrgaenge = [...new Set(wines.map(w => w.Jahrgang).filter(Boolean))]
@@ -1137,10 +1241,25 @@ function renderTable() {
         return;
     }
 
-    const ths = COLS.map(c => {
+    // Active columns in current order
+    const activeCols = (colOrder || COLS.map(c => c.key))
+        .map(key => COLS.find(c => c.key === key))
+        .filter(Boolean);
+
+    const ths = activeCols.map((c, idx) => {
         const sorted = sortCol === c.key;
         const icon   = sorted ? (sortDir === 1 ? '↑' : '↓') : '↕';
-        return `<th class="${c.cls}${sorted ? ' sorted' : ''}" onclick="sortBy('${c.key}')">
+        const dragAttrs = isAdmin
+            ? `draggable="true"
+               ondragstart="onColDragStart(event,${idx})"
+               ondragover="onColDragOver(event)"
+               ondrop="onColDrop(event,${idx})"
+               ondragend="onColDragEnd(event)"`
+            : '';
+        return `<th class="${c.cls}${sorted ? ' sorted' : ''}"
+                    data-col-idx="${idx}"
+                    onclick="sortBy('${c.key}')"
+                    ${dragAttrs}>
                     ${c.label}<span class="sort-icon">${icon}</span>
                 </th>`;
     }).join('') + `<th class="col-menge">Menge</th>`;
@@ -1149,7 +1268,7 @@ function renderTable() {
         const oi = wines.indexOf(wine);
         const cq = cart[oi] || 0;
 
-        const cells = COLS.map(c => {
+        const cells = activeCols.map(c => {
             const raw = wine[c.key] ?? '';
             let html  = '';
             if (c.fmt === 'price') {
@@ -1200,6 +1319,97 @@ function renderTable() {
                 <tbody>${tbody}</tbody>
             </table>
         </div>`;
+}
+
+/* ══════════════════════════════════════════════════════
+   COLUMN DRAG & DROP
+══════════════════════════════════════════════════════ */
+function onColDragStart(evt, idx) {
+    dragColIdx = idx;
+    evt.currentTarget.classList.add('th-dragging');
+    evt.dataTransfer.effectAllowed = 'move';
+    evt.stopPropagation();
+}
+
+function onColDragOver(evt) {
+    evt.preventDefault();
+    evt.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('thead th').forEach(th => th.classList.remove('th-drag-over'));
+    const th = evt.currentTarget;
+    const toIdx = parseInt(th.dataset.colIdx);
+    if (!isNaN(toIdx) && toIdx !== dragColIdx) th.classList.add('th-drag-over');
+}
+
+function onColDrop(evt, toIdx) {
+    evt.preventDefault();
+    if (dragColIdx === null || dragColIdx === toIdx) return;
+    const newOrder = [...colOrder];
+    const [moved] = newOrder.splice(dragColIdx, 1);
+    newOrder.splice(toIdx, 0, moved);
+    colOrder = newOrder;
+    renderTable();
+    commitLayoutToGitHub();
+    dragColIdx = null;
+}
+
+function onColDragEnd() {
+    document.querySelectorAll('thead th').forEach(th => {
+        th.classList.remove('th-dragging', 'th-drag-over');
+    });
+    dragColIdx = null;
+}
+
+/* ══════════════════════════════════════════════════════
+   FILTER DRAG & DROP
+══════════════════════════════════════════════════════ */
+function onFilterDragStart(evt) {
+    dragFilterId = evt.currentTarget.dataset.filterId;
+    evt.currentTarget.classList.add('fw-dragging');
+    evt.dataTransfer.effectAllowed = 'move';
+    evt.stopPropagation();
+}
+
+function onFilterDragOver(evt) {
+    evt.preventDefault();
+    evt.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.filter-wrap').forEach(el => el.classList.remove('fw-drag-over'));
+    const wrap = evt.currentTarget;
+    if (wrap.dataset.filterId !== dragFilterId) wrap.classList.add('fw-drag-over');
+}
+
+function onFilterDrop(evt) {
+    evt.preventDefault();
+    const toId = evt.currentTarget.dataset.filterId;
+    if (!dragFilterId || dragFilterId === toId) return;
+    const newOrder = [...filterOrder];
+    const fromIdx  = newOrder.indexOf(dragFilterId);
+    const toIdx    = newOrder.indexOf(toId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    newOrder.splice(fromIdx, 1);
+    newOrder.splice(toIdx, 0, dragFilterId);
+    filterOrder = newOrder;
+    // Re-render filters, repopulate options, preserve current values
+    const saved = {};
+    FILTER_DEFS.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (el) saved[f.id] = el.value;
+    });
+    renderFilters();
+    populateFilterOptions();
+    FILTER_DEFS.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (el && saved[f.id]) el.value = saved[f.id];
+    });
+    applyFilters();
+    commitLayoutToGitHub();
+    dragFilterId = null;
+}
+
+function onFilterDragEnd() {
+    document.querySelectorAll('.filter-wrap').forEach(el => {
+        el.classList.remove('fw-dragging', 'fw-drag-over');
+    });
+    dragFilterId = null;
 }
 
 /* ══════════════════════════════════════════════════════
